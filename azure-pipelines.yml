@@ -1,7 +1,3 @@
-# ASP.NET Core (.NET Framework)
-# Build and test ASP.NET Core projects targeting the full .NET Framework.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
 - master
@@ -9,26 +5,80 @@ trigger:
 pool:
   vmImage: 'windows-latest'
 
+# define variables to use during the build
 variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  UIworkingDirectory: 'AngDotnetDemo/AngDotnetDemo/ClientApp'
 
+#angular build commands
+strategy:
+  matrix:
+    node_13_x:
+      node_version: 13.x
 steps:
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
+- task: UseDotNet@2
+  displayName: 'Use .NET Core sdk 3.x'
   inputs:
-    restoreSolution: '$(solution)'
+    packageType: runtime
+    version: 3.x
 
-- task: VSBuild@1
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
   inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'restore'
+    projects: '**/*.csproj'
+  enabled: 'false'
 
-- task: VSTest@2
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--output $(Build.ArtifactStagingDirectory) --configuration Release'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: $(node_version)
+
+- task: Npm@1
+  displayName: 'npm install'
+  inputs:
+    workingDir: $(UIworkingDirectory)
+    verbose: false
+  enabled: 'true'
+
+- task: Npm@1
+  displayName: 'Install Angular Cli'
+  inputs:
+    command: custom
+    customCommand: install -g @angular/cli
+    verbose: false
+  enabled: 'true'
+
+- task: Npm@1
+  displayName: 'npm run build'
+  inputs:
+    command: custom
+    customCommand: run build
+    workingDir: $(UIworkingDirectory)
+    verbose: false
+  enabled: 'true'
+
+- task: CopyFiles@2
+  displayName: 'Copy client output to wwwroot'
+  inputs:
+    SourceFolder: '$(UIworkingDirectory)/dist'
+    targetFolder: '$(Build.ArtifactStagingDirectory)/ClientApp/dist'
+  enabled: 'true'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1    
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish:  '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
