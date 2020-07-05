@@ -3,7 +3,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'windows-latest'
+  name: 'webtatel'
 
 # define variables to use during the build
 variables:
