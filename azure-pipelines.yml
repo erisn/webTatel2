@@ -3,7 +3,7 @@ trigger:
 - master
 
 pool:
-  name: 'webtatelVM'
+  name: 'Self-Hosted Windows Agent'
 
 # define variables to use during the build
 variables:
