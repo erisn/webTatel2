@@ -3,7 +3,7 @@ trigger:
 - master
 
 pool:
-  name: 'webtatel'
+  name: 'webtatelVM'
 
 # define variables to use during the build
 variables:
