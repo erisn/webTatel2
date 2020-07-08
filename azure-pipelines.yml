@@ -88,3 +88,17 @@ steps:
   displayName: 'Publish Artifact: drop'
   inputs:
     PathtoPublish:  '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+
+
+- task: FortifySCA@6
+  inputs:
+    runBuildTranslate: true
+    applicationType: 'dotnet'
+    fortifyProjects: '**\*.sln'
+    fortifyBuildId: 'webtatelBuildID'
+    runFortifyRulepackUpdate: false
+    runFortifyClean: true
+    scaVerbose: false
+    scaDebug: false
+    runFortifyScan: true
+    fortifyScanType: 'Local'
